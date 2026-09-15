@@ -17,6 +17,9 @@ STRAIGHT = {
 }
 CORNERS = ["corner_left_front", "corner_left_back",
            "corner_right_front", "corner_right_back"]
+LEVELS = ["flat", "up", "down"]
+SLOPES = ["slope_%s_%s" % (l, r) for l in LEVELS for r in LEVELS
+          if not (l == "flat" and r == "flat")]
 
 variants = {"normal": [{}], "inventory": [{}]}
 
@@ -28,7 +31,7 @@ for facing, y in Y.items():
         if submodels:
             v["submodel"] = submodels
         variants["facing=%s,shape=%s" % (facing, shape)] = v
-    for shape in CORNERS:
+    for shape in CORNERS + SLOPES:
         v = {"model": "trafficcontrol:traffic_rail_" + shape}
         if y:
             v["y"] = y
