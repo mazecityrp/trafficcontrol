@@ -24,7 +24,8 @@ OUT = os.path.join(
 
 SHORT = 6 * math.sqrt(2)   # 8.48528  - diagonal that cuts a block corner
 LONG = 10 * math.sqrt(2)   # 14.14214 - diagonal that crosses the block
-OVER = 0.5                 # mitre overlap so the joint has no notch
+BEAM_X = 6.0               # where the beam centre line sits across the block
+TAN_HALF = math.tan(math.radians(22.5))   # the diagonal meets a straight rail at 45 deg
 
 
 def r(v):
@@ -32,26 +33,31 @@ def r(v):
 
 
 # Cross section of the beam, in the un-rotated frame (x = across, y = height).
-# The straight model tilts its flanges with a Z rotation; an element can only
-# carry one rotation, so the diagonal keeps the same envelope with square flanges.
-PROFILE = [
-    ("Beam", 5.5, 6.5, 8.0, 16.0, 0.0, 8.0),
-    ("UpperFlange", 4.4, 5.6, 12.0, 15.0, 2.0, 5.0),
-    ("LowerFlange", 4.4, 5.6, 6.0, 9.0, 6.0, 9.0),
-]
+# The straight model tilts its flanges with a Z rotation and an element can only
+# carry one rotation - here it is spent on the 45 degree turn - so the W is
+# rebuilt as horizontal bands measured off the straight model itself.  Shared
+# with the slopes so both diagonals have the same silhouette.
+from gen_slope_models import TILTED_PROFILE as PROFILE
 
 
 def beam_elements(origin_x, origin_z, angle, z_from, z_to):
-    """Profile boxes stretched along Z then pivoted around (origin_x, origin_z)."""
-    length = z_to - z_from
+    """Profile boxes stretched along Z then pivoted around (origin_x, origin_z).
+
+    Each band is extended past both ends by its own mitre, r * tan(22.5), where
+    r is how far it reaches sideways from the beam centre line - the bend here is
+    horizontal, so that is the x reach, not the height.  A flat overlap would
+    leave the outer bands short and notch the joint.
+    """
     out = []
     for name, x0, x1, y0, y1, v0, v1 in PROFILE:
         w = x1 - x0
-        h = y1 - y0
+        over = max(abs(x0 - BEAM_X), abs(x1 - BEAM_X)) * TAN_HALF
+        e_from, e_to = z_from - over, z_to + over
+        length = e_to - e_from
         out.append({
             "name": name,
-            "from": [r(x0), r(y0), r(z_from)],
-            "to": [r(x1), r(y1), r(z_to)],
+            "from": [r(x0), r(y0), r(e_from)],
+            "to": [r(x1), r(y1), r(e_to)],
             "rotation": {"angle": angle, "axis": "y",
                          "origin": [r(origin_x), 16, r(origin_z)]},
             "faces": {
@@ -95,9 +101,9 @@ def post_elements(cx, cz):
 def build(name, origin_z, angle, length, forward, post):
     """forward=True: the beam runs towards +Z from the origin, else towards -Z."""
     if forward:
-        z_from, z_to = origin_z - OVER, origin_z + length + OVER
+        z_from, z_to = origin_z, origin_z + length
     else:
-        z_from, z_to = origin_z - length - OVER, origin_z + OVER
+        z_from, z_to = origin_z - length, origin_z
 
     model = {
         "__comment": "Diagonal guardrail corner - generated, see tools/gen_corner_models.py",
