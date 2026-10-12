@@ -14,10 +14,19 @@ import net.minecraft.client.gui.GuiTextField;
 import net.minecraftforge.fml.client.config.GuiCheckBox;
 
 public class CrossingGateGateGui extends GuiScreen {
+	private static final int ROW_HEIGHT = 24;
+	private static final int VALID_COLOR = 0xE0E0E0;
+	private static final int INVALID_COLOR = 0xFF5555;
+	private static final String HEIGHT_LABEL = "Gate Height (" + (int)CrossingGateGateTileEntity.MIN_GATE_HEIGHT + "-" + (int)CrossingGateGateTileEntity.MAX_GATE_HEIGHT + " px):";
+	private static final String THICKNESS_LABEL = "Gate Thickness (" + (int)CrossingGateGateTileEntity.MIN_GATE_THICKNESS + "-" + (int)CrossingGateGateTileEntity.MAX_GATE_THICKNESS + " px):";
+	private static final String SPEED_LABEL = "Gate Speed (" + (int)CrossingGateGateTileEntity.MIN_GATE_SPEED + "-" + (int)CrossingGateGateTileEntity.MAX_GATE_SPEED + " \u00b0/s):";
 	
 	private GuiTextField length;
+	private GuiTextField gateHeight;
+	private GuiTextField gateThickness;
 	private GuiTextField upperRotation;
 	private GuiTextField lowerRotation;
+	private GuiTextField speed;
 	private GuiTextField delay;
 	private GuiTextField lightStartOffset;
 	private GuiCheckBox threeLights;
@@ -36,23 +45,43 @@ public class CrossingGateGateGui extends GuiScreen {
 		int horizontalCenter = width / 2;
 		int verticalCenter = height / 2;
 		
-		length = new GuiTextField(COMP_IDS.LENGTH, fontRenderer, horizontalCenter - 50, verticalCenter - 70, 100, 20);
+		// 8 rows of fields then the light checkboxes, centred vertically
+		int x = horizontalCenter - 50;
+		int y = verticalCenter - (8 * ROW_HEIGHT + 20) / 2;
+		
+		// Dimensions of the arm: X (length), Y (height), Z (thickness)
+		length = new GuiTextField(COMP_IDS.LENGTH, fontRenderer, x, y, 100, 20);
 		length.setText(String.valueOf(te.getCrossingGateLength()));
 		
-		upperRotation = new GuiTextField(COMP_IDS.UPPER_ROTATION, fontRenderer, horizontalCenter - 50, verticalCenter - 40, 100, 20);
+		gateHeight = new GuiTextField(COMP_IDS.GATE_HEIGHT, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
+		gateHeight.setMaxStringLength(6);
+		gateHeight.setText(String.valueOf(te.getGateHeight()));
+		
+		gateThickness = new GuiTextField(COMP_IDS.GATE_THICKNESS, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
+		gateThickness.setMaxStringLength(6);
+		gateThickness.setText(String.valueOf(te.getGateThickness()));
+		
+		upperRotation = new GuiTextField(COMP_IDS.UPPER_ROTATION, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
 		upperRotation.setText(String.valueOf(te.getUpperRotationLimit()));
 		
-		lowerRotation = new GuiTextField(COMP_IDS.LOWER_ROTATION, fontRenderer, horizontalCenter - 50, verticalCenter - 10, 100, 20);
+		lowerRotation = new GuiTextField(COMP_IDS.LOWER_ROTATION, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
 		lowerRotation.setText(String.valueOf(te.getLowerRotationLimit()));
 		
-		delay = new GuiTextField(COMP_IDS.DELAY, fontRenderer, horizontalCenter - 50, verticalCenter + 20, 100, 20);
+		speed = new GuiTextField(COMP_IDS.SPEED, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
+		speed.setMaxStringLength(6);
+		speed.setText(String.valueOf(te.getGateSpeed()));
+		
+		delay = new GuiTextField(COMP_IDS.DELAY, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
 		delay.setText(String.valueOf(te.getDelay()));
 		
-		lightStartOffset = new GuiTextField(COMP_IDS.LIGHT_START_OFFSET, fontRenderer, horizontalCenter - 50, verticalCenter + 50, 100, 20);
+		lightStartOffset = new GuiTextField(COMP_IDS.LIGHT_START_OFFSET, fontRenderer, x, y += ROW_HEIGHT, 100, 20);
 		lightStartOffset.setText(String.valueOf(te.getLightStartOffset()));
 		
-		threeLights = new GuiCheckBox(COMP_IDS.THREE_LIGHT, horizontalCenter - 50, verticalCenter + 80, "Three Gate Lights", te.getGateLightCount() == GateLightCount.ThreeLights);
-		oneLight = new GuiCheckBox(COMP_IDS.ONE_LIGHT, horizontalCenter - 50 + threeLights.width + 4, verticalCenter + 80, "One Gate Light", te.getGateLightCount() == GateLightCount.OneLight);
+		y += ROW_HEIGHT;
+		threeLights = new GuiCheckBox(COMP_IDS.THREE_LIGHT, x, y, "Three Gate Lights", te.getGateLightCount() == GateLightCount.ThreeLights);
+		oneLight = new GuiCheckBox(COMP_IDS.ONE_LIGHT, x + threeLights.width + 4, y, "One Gate Light", te.getGateLightCount() == GateLightCount.OneLight);
+		
+		updateRangeColors();
 		
 		buttonList.add(threeLights);
 		buttonList.add(oneLight);
@@ -67,11 +96,20 @@ public class CrossingGateGateGui extends GuiScreen {
 		fontRenderer.drawString("Gate Length:", length.x - fontRenderer.getStringWidth("Gate Length:") - 10, length.y + (length.height / 4), 0xFFFFFF);
 		length.drawTextBox();
 		
+		fontRenderer.drawString(HEIGHT_LABEL, gateHeight.x - fontRenderer.getStringWidth(HEIGHT_LABEL) - 10, gateHeight.y + (gateHeight.height / 4), 0xFFFFFF);
+		gateHeight.drawTextBox();
+		
+		fontRenderer.drawString(THICKNESS_LABEL, gateThickness.x - fontRenderer.getStringWidth(THICKNESS_LABEL) - 10, gateThickness.y + (gateThickness.height / 4), 0xFFFFFF);
+		gateThickness.drawTextBox();
+		
 		fontRenderer.drawString("Upper Rotation:", upperRotation.x - fontRenderer.getStringWidth("Upper Rotation:") - 10, upperRotation.y + (upperRotation.height / 4), 0xFFFFFF);
 		upperRotation.drawTextBox();
 		
 		fontRenderer.drawString("Lower Rotation:", lowerRotation.x - fontRenderer.getStringWidth("Lower Rotation:") - 10, lowerRotation.y + (lowerRotation.height / 4), 0xFFFFFF);
 		lowerRotation.drawTextBox();
+		
+		fontRenderer.drawString(SPEED_LABEL, speed.x - fontRenderer.getStringWidth(SPEED_LABEL) - 10, speed.y + (speed.height / 4), 0xFFFFFF);
+		speed.drawTextBox();
 		
 		fontRenderer.drawString("Activation Delay:", delay.x - fontRenderer.getStringWidth("Activation Delay:") - 10, delay.y + (delay.height / 4), 0xFFFFFF);
 		delay.drawTextBox();
@@ -93,8 +131,11 @@ public class CrossingGateGateGui extends GuiScreen {
 				keyCode == Keyboard.KEY_END)
 		{
 			length.textboxKeyTyped(typedChar, keyCode);
+			gateHeight.textboxKeyTyped(typedChar, keyCode);
+			gateThickness.textboxKeyTyped(typedChar, keyCode);
 			upperRotation.textboxKeyTyped(typedChar, keyCode);
 			lowerRotation.textboxKeyTyped(typedChar, keyCode);
+			speed.textboxKeyTyped(typedChar, keyCode);
 			delay.textboxKeyTyped(typedChar, keyCode);
 			lightStartOffset.textboxKeyTyped(typedChar, keyCode);
 		}
@@ -109,11 +150,30 @@ public class CrossingGateGateGui extends GuiScreen {
 		if (typedChar == '.')
 		{
 			keyTypedDecimal(length, typedChar, keyCode);
+			keyTypedDecimal(gateHeight, typedChar, keyCode);
+			keyTypedDecimal(gateThickness, typedChar, keyCode);
 			keyTypedDecimal(upperRotation, typedChar, keyCode);
 			keyTypedDecimal(lowerRotation, typedChar, keyCode);
+			keyTypedDecimal(speed, typedChar, keyCode);
 			keyTypedDecimal(delay, typedChar, keyCode);
 			keyTypedDecimal(lightStartOffset, typedChar, keyCode);
 		}
+		
+		updateRangeColors();
+	}
+	
+	/** Values outside their range are shown in red (they will be brought back into range when saved) */
+	private void updateRangeColors()
+	{
+		updateRangeColor(gateHeight, CrossingGateGateTileEntity.MIN_GATE_HEIGHT, CrossingGateGateTileEntity.MAX_GATE_HEIGHT);
+		updateRangeColor(gateThickness, CrossingGateGateTileEntity.MIN_GATE_THICKNESS, CrossingGateGateTileEntity.MAX_GATE_THICKNESS);
+		updateRangeColor(speed, CrossingGateGateTileEntity.MIN_GATE_SPEED, CrossingGateGateTileEntity.MAX_GATE_SPEED);
+	}
+	
+	private void updateRangeColor(GuiTextField textBox, float min, float max)
+	{
+		float value = parseFloatOrDefault(textBox.getText(), Float.NaN);
+		textBox.setTextColor(value >= min && value <= max ? VALID_COLOR : INVALID_COLOR);
 	}
 	
 	private void keyTypedDecimal(GuiTextField textBox, char typedChar, int keyCode)
@@ -128,8 +188,11 @@ public class CrossingGateGateGui extends GuiScreen {
 	protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
 		super.mouseClicked(mouseX, mouseY, mouseButton);
 		length.mouseClicked(mouseX, mouseY, mouseButton);
+		gateHeight.mouseClicked(mouseX, mouseY, mouseButton);
+		gateThickness.mouseClicked(mouseX, mouseY, mouseButton);
 		upperRotation.mouseClicked(mouseX, mouseY, mouseButton);
 		lowerRotation.mouseClicked(mouseX, mouseY, mouseButton);
+		speed.mouseClicked(mouseX, mouseY, mouseButton);
 		delay.mouseClicked(mouseX, mouseY, mouseButton);
 		lightStartOffset.mouseClicked(mouseX, mouseY, mouseButton);
 	}
@@ -159,10 +222,19 @@ public class CrossingGateGateGui extends GuiScreen {
 		te.setDelay(parseFloatOrDefault(delay.getText()));
 		te.setLightStartOffset(parseFloatOrDefault(lightStartOffset.getText()));
 		te.setGateLightCount(threeLights.isChecked() ? GateLightCount.ThreeLights : GateLightCount.OneLight);
+		// Unreadable values keep the current setting, out of range values are clamped by the setters
+		te.setGateHeight(parseFloatOrDefault(gateHeight.getText(), te.getGateHeight()));
+		te.setGateThickness(parseFloatOrDefault(gateThickness.getText(), te.getGateThickness()));
+		te.setGateSpeed(parseFloatOrDefault(speed.getText(), te.getGateSpeed()));
 		te.performClientToServerSync();
 	}
 	
 	private float parseFloatOrDefault(String text)
+	{
+		return parseFloatOrDefault(text, 0F);
+	}
+	
+	private float parseFloatOrDefault(String text, float defaultValue)
 	{
 		try
 		{
@@ -170,7 +242,7 @@ public class CrossingGateGateGui extends GuiScreen {
 		}
 		catch (Exception ex)
 		{
-			return 0F;
+			return defaultValue;
 		}
 	}
 	
@@ -198,5 +270,8 @@ public class CrossingGateGateGui extends GuiScreen {
 		public static final int LIGHT_START_OFFSET = 5;
 		public static final int THREE_LIGHT = 6;
 		public static final int ONE_LIGHT = 7;
+		public static final int GATE_HEIGHT = 8;
+		public static final int GATE_THICKNESS = 9;
+		public static final int SPEED = 10;
 	}
 }

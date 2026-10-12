@@ -1,4 +1,4 @@
-"""Generate the four diagonal-corner models for trafficcontrol's guardrail (traffic_rail).
+"""Generate the diagonal models for trafficcontrol's guardrail (traffic_rail).
 
 Frame of reference: the model is authored for facing=east (the blockstate applies
 y=90/180/270 for south/west/north, exactly like the straight rail model).
@@ -12,6 +12,14 @@ Element rotation about Y in Minecraft is right handed:
     x' = x*cos(a) + z*sin(a)
     z' = -x*sin(a) + z*cos(a)
 (verified against crossing_gate_lamps_{ne,nw}_support.json in this repo).
+
+The same four diagonals also make up a diagonal run, a staircase of rails whose
+blocks pass the 45 degree line on to each other.  There an end does not bend
+into a straight rail but carries straight on into the next diagonal, or stops at
+a loose end, and must be cut square and flush instead of mitred: two collinear
+pieces that overlap have coplanar faces, which z-fight (see gen_slope_models.py).
+traffic_rail_corner_* bends at both ends, traffic_rail_diagonal_* at neither and
+traffic_rail_diagonal_*_bend_<side> at that side only.
 """
 
 import json
@@ -40,19 +48,21 @@ def r(v):
 from gen_slope_models import TILTED_PROFILE as PROFILE
 
 
-def beam_elements(origin_x, origin_z, angle, z_from, z_to):
+def beam_elements(origin_x, origin_z, angle, z_from, z_to, mitre_from=True, mitre_to=True):
     """Profile boxes stretched along Z then pivoted around (origin_x, origin_z).
 
-    Each band is extended past both ends by its own mitre, r * tan(22.5), where
-    r is how far it reaches sideways from the beam centre line - the bend here is
-    horizontal, so that is the x reach, not the height.  A flat overlap would
-    leave the outer bands short and notch the joint.
+    Each band is extended past a bending end by its own mitre, r * tan(22.5),
+    where r is how far it reaches sideways from the beam centre line - the bend
+    here is horizontal, so that is the x reach, not the height.  A flat overlap
+    would leave the outer bands short and notch the joint.  An end that carries
+    straight on is left square, flush with the next diagonal.
     """
     out = []
     for name, x0, x1, y0, y1, v0, v1 in PROFILE:
         w = x1 - x0
         over = max(abs(x0 - BEAM_X), abs(x1 - BEAM_X)) * TAN_HALF
-        e_from, e_to = z_from - over, z_to + over
+        e_from = z_from - (over if mitre_from else 0.0)
+        e_to = z_to + (over if mitre_to else 0.0)
         length = e_to - e_from
         out.append({
             "name": name,
@@ -98,21 +108,27 @@ def post_elements(cx, cz):
     ]
 
 
-def build(name, origin_z, angle, length, forward, post):
-    """forward=True: the beam runs towards +Z from the origin, else towards -Z."""
+def build(name, origin_z, angle, length, forward, post, bend_arm=True, bend_turn=True):
+    """forward=True: the beam runs towards +Z from the origin, else towards -Z.
+
+    The origin is always where the arm comes in, on the left or right edge.
+    """
     if forward:
         z_from, z_to = origin_z, origin_z + length
+        mitre_from, mitre_to = bend_arm, bend_turn
     else:
         z_from, z_to = origin_z - length, origin_z
+        mitre_from, mitre_to = bend_turn, bend_arm
 
+    kind = "corner" if bend_arm and bend_turn else "diagonal"
     model = {
-        "__comment": "Diagonal guardrail corner - generated, see tools/gen_corner_models.py",
+        "__comment": "Diagonal guardrail %s - generated, see tools/gen_corner_models.py" % kind,
         "textures": {
             "0": "blocks/log_oak",
             "1": "trafficcontrol:blocks/generic",
             "particle": "trafficcontrol:blocks/generic",
         },
-        "elements": beam_elements(6.0, origin_z, angle, z_from, z_to)
+        "elements": beam_elements(6.0, origin_z, angle, z_from, z_to, mitre_from, mitre_to)
                     + post_elements(*post),
     }
 
@@ -123,11 +139,23 @@ def build(name, origin_z, angle, length, forward, post):
     print("wrote", path)
 
 
-# entry on the LEFT edge (north, x=6) -> exit through the BACK edge (west, z=6)
-build("traffic_rail_corner_left_back", 0.0, -45, SHORT, True, (4.8, 4.8))
-# entry on the LEFT edge (north, x=6) -> exit through the FRONT edge (east, z=10)
-build("traffic_rail_corner_left_front", 0.0, 45, LONG, True, (12.85, 3.15))
-# entry on the RIGHT edge (south, x=6) -> exit through the BACK edge (west, z=10)
-build("traffic_rail_corner_right_back", 16.0, 45, SHORT, False, (4.8, 11.2))
-# entry on the RIGHT edge (south, x=6) -> exit through the FRONT edge (east, z=6)
-build("traffic_rail_corner_right_front", 16.0, -45, LONG, False, (12.85, 12.85))
+CORNERS = [
+    # entry on the LEFT edge (north, x=6) -> exit through the BACK edge (west, z=6)
+    ("left", "back", 0.0, -45, SHORT, True, (4.8, 4.8)),
+    # entry on the LEFT edge (north, x=6) -> exit through the FRONT edge (east, z=10)
+    ("left", "front", 0.0, 45, LONG, True, (12.85, 3.15)),
+    # entry on the RIGHT edge (south, x=6) -> exit through the BACK edge (west, z=10)
+    ("right", "back", 16.0, 45, SHORT, False, (4.8, 11.2)),
+    # entry on the RIGHT edge (south, x=6) -> exit through the FRONT edge (east, z=6)
+    ("right", "front", 16.0, -45, LONG, False, (12.85, 12.85)),
+]
+
+for arm, turn, origin_z, angle, length, forward, post in CORNERS:
+    corner = "%s_%s" % (arm, turn)
+    build("traffic_rail_corner_" + corner, origin_z, angle, length, forward, post)
+    build("traffic_rail_diagonal_" + corner, origin_z, angle, length, forward, post,
+          bend_arm=False, bend_turn=False)
+    build("traffic_rail_diagonal_%s_bend_%s" % (corner, arm), origin_z, angle, length, forward, post,
+          bend_arm=True, bend_turn=False)
+    build("traffic_rail_diagonal_%s_bend_%s" % (corner, turn), origin_z, angle, length, forward, post,
+          bend_arm=False, bend_turn=True)

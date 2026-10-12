@@ -43,14 +43,50 @@
         "facing=east,shape=corner_left_front": {
             "model": "trafficcontrol:traffic_rail_corner_left_front"
         },
+        "facing=east,shape=diagonal_left_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front"
+        },
+        "facing=east,shape=diagonal_left_front_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_left"
+        },
+        "facing=east,shape=diagonal_left_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_front"
+        },
         "facing=east,shape=corner_left_back": {
             "model": "trafficcontrol:traffic_rail_corner_left_back"
+        },
+        "facing=east,shape=diagonal_left_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back"
+        },
+        "facing=east,shape=diagonal_left_back_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_left"
+        },
+        "facing=east,shape=diagonal_left_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_back"
         },
         "facing=east,shape=corner_right_front": {
             "model": "trafficcontrol:traffic_rail_corner_right_front"
         },
+        "facing=east,shape=diagonal_right_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front"
+        },
+        "facing=east,shape=diagonal_right_front_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_right"
+        },
+        "facing=east,shape=diagonal_right_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_front"
+        },
         "facing=east,shape=corner_right_back": {
             "model": "trafficcontrol:traffic_rail_corner_right_back"
+        },
+        "facing=east,shape=diagonal_right_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back"
+        },
+        "facing=east,shape=diagonal_right_back_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_right"
+        },
+        "facing=east,shape=diagonal_right_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_back"
         },
         "facing=east,shape=slope_flat_up": {
             "model": "trafficcontrol:traffic_rail_slope_flat_up"
@@ -114,16 +150,64 @@
             "model": "trafficcontrol:traffic_rail_corner_left_front",
             "y": 90
         },
+        "facing=south,shape=diagonal_left_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_left_front_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_left",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_left_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_front",
+            "y": 90
+        },
         "facing=south,shape=corner_left_back": {
             "model": "trafficcontrol:traffic_rail_corner_left_back",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_left_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_left_back_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_left",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_left_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_back",
             "y": 90
         },
         "facing=south,shape=corner_right_front": {
             "model": "trafficcontrol:traffic_rail_corner_right_front",
             "y": 90
         },
+        "facing=south,shape=diagonal_right_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_right_front_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_right",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_right_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_front",
+            "y": 90
+        },
         "facing=south,shape=corner_right_back": {
             "model": "trafficcontrol:traffic_rail_corner_right_back",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_right_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_right_back_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_right",
+            "y": 90
+        },
+        "facing=south,shape=diagonal_right_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_back",
             "y": 90
         },
         "facing=south,shape=slope_flat_up": {
@@ -196,16 +280,64 @@
             "model": "trafficcontrol:traffic_rail_corner_left_front",
             "y": 180
         },
+        "facing=west,shape=diagonal_left_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_left_front_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_left",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_left_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_front",
+            "y": 180
+        },
         "facing=west,shape=corner_left_back": {
             "model": "trafficcontrol:traffic_rail_corner_left_back",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_left_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_left_back_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_left",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_left_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_back",
             "y": 180
         },
         "facing=west,shape=corner_right_front": {
             "model": "trafficcontrol:traffic_rail_corner_right_front",
             "y": 180
         },
+        "facing=west,shape=diagonal_right_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_right_front_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_right",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_right_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_front",
+            "y": 180
+        },
         "facing=west,shape=corner_right_back": {
             "model": "trafficcontrol:traffic_rail_corner_right_back",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_right_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_right_back_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_right",
+            "y": 180
+        },
+        "facing=west,shape=diagonal_right_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_back",
             "y": 180
         },
         "facing=west,shape=slope_flat_up": {
@@ -278,16 +410,64 @@
             "model": "trafficcontrol:traffic_rail_corner_left_front",
             "y": 270
         },
+        "facing=north,shape=diagonal_left_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_left_front_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_left",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_left_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_front_bend_front",
+            "y": 270
+        },
         "facing=north,shape=corner_left_back": {
             "model": "trafficcontrol:traffic_rail_corner_left_back",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_left_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_left_back_bend_left": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_left",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_left_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_left_back_bend_back",
             "y": 270
         },
         "facing=north,shape=corner_right_front": {
             "model": "trafficcontrol:traffic_rail_corner_right_front",
             "y": 270
         },
+        "facing=north,shape=diagonal_right_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_right_front_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_right",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_right_front_bend_front": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_front_bend_front",
+            "y": 270
+        },
         "facing=north,shape=corner_right_back": {
             "model": "trafficcontrol:traffic_rail_corner_right_back",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_right_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_right_back_bend_right": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_right",
+            "y": 270
+        },
+        "facing=north,shape=diagonal_right_back_bend_back": {
+            "model": "trafficcontrol:traffic_rail_diagonal_right_back_bend_back",
             "y": 270
         },
         "facing=north,shape=slope_flat_up": {

@@ -62,6 +62,9 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
 	provided 'curse.maven:opencomputers-223008:4630537'
+	// Optional DynamX integration (vehicles stop at lowered crossing gates): compile time only, Traffic Control runs without DynamX.
+	// Needs a DynamX "-all" jar (it contains Libbulletjme); another one can be given with -PdynamxJar=path/to/DynamX-all.jar
+	provided files(project.findProperty('dynamxJar') ?: '../DynamX/build/libs/DynamX-4.2.0-beta-all.jar')
 	compile 'curse.maven:immersiverailroading-277736:4970105'
 	compile 'curse.maven:umc-371784:4975229'
 	compile 'curse.maven:trackapi-282613:2825260'

@@ -2,6 +2,7 @@ package com.clussmanproductions.trafficcontrol;
 
 import org.apache.logging.log4j.Logger;
 
+import com.clussmanproductions.trafficcontrol.collision.GatePhysics;
 import com.clussmanproductions.trafficcontrol.proxy.CommonProxy;
 import com.clussmanproductions.trafficcontrol.signs.SignRepository;
 
@@ -46,6 +47,7 @@ public class ModTrafficControl {
 	{
 		OC_INSTALLED = Loader.isModLoaded("opencomputers");
 		logger = e.getModLog();
+		GatePhysics.init();
 		proxy.preInit(e);
 	}
 

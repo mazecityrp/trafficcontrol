@@ -45,7 +45,7 @@ public class RendererCrossingGateGate extends TileEntitySpecialRenderer<Crossing
 		renderWeightVerticies(builder);
 		tes.draw();
 		builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-		renderGateVerticies(builder, te.getCrossingGateLength());
+		renderGateVerticies(builder, te.getCrossingGateLength(), te.getGateHeight(), te.getGateThickness());
 		tes.draw();
 		
 		if (te.getGateLightCount() == GateLightCount.OneLight || te.getCrossingGateLength() - te.getLightStartOffset() >= 2)
@@ -115,7 +115,7 @@ public class RendererCrossingGateGate extends TileEntitySpecialRenderer<Crossing
 		box.render(builder, (tex) -> bindTexture(tex));	
 	}
 	
-	private void renderGateVerticies(BufferBuilder builder, float crossingGateLength)
+	private void renderGateVerticies(BufferBuilder builder, float crossingGateLength, float gateHeight, float gateThickness)
 	{
 		ResourceLocation gate = new ResourceLocation(ModTrafficControl.MODID + ":textures/blocks/gate.png");
 		TextureInfoCollection collection = new TextureInfoCollection(
@@ -125,8 +125,9 @@ public class RendererCrossingGateGate extends TileEntitySpecialRenderer<Crossing
 				new TextureInfo(gate, 0, 1, 16, 1.7),
 				new TextureInfo(gate, 0, 2, 3, 4),
 				new TextureInfo(gate, 0, 2, 3, 4));
-		Box gateBox = new Box( -(crossingGateLength * 16) - 13,  -9.5, 0.5, 
-							   (crossingGateLength * 16) + 5.5,     2,  -1, collection);
+		// The top of the arm stays at its fixing point, under the lights: a taller arm grows downwards, a thicker one on both sides
+		Box gateBox = new Box( -(crossingGateLength * 16) - 13,  -7.5 - gateHeight, gateThickness / 2, 
+							   (crossingGateLength * 16) + 5.5,     gateHeight,  -gateThickness, collection);
 		gateBox.render(builder, (tex) -> bindTexture(tex));
 	}
 	

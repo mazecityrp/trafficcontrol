@@ -15,8 +15,13 @@ STRAIGHT = {
     "straight_right": {"right": RIGHT},
     "straight_both": {"left": LEFT, "right": RIGHT},
 }
-CORNERS = ["corner_left_front", "corner_left_back",
-           "corner_right_front", "corner_right_back"]
+CORNERS = []
+for arm in ("left", "right"):
+    for turn in ("front", "back"):
+        CORNERS += ["corner_%s_%s" % (arm, turn),
+                    "diagonal_%s_%s" % (arm, turn),
+                    "diagonal_%s_%s_bend_%s" % (arm, turn, arm),
+                    "diagonal_%s_%s_bend_%s" % (arm, turn, turn)]
 LEVELS = ["flat", "up", "down"]
 SLOPES = ["slope_%s_%s" % (l, r) for l in LEVELS for r in LEVELS
           if not (l == "flat" and r == "flat")]

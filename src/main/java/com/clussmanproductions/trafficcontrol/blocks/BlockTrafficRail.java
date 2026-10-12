@@ -1,5 +1,6 @@
 package com.clussmanproductions.trafficcontrol.blocks;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -48,6 +49,15 @@ public class BlockTrafficRail extends Block {
 	 * {@code facing.rotateY()}), FRONT/BACK which side the diagonal leaves
 	 * through ({@code facing} / its opposite).
 	 *
+	 * The same four diagonals also make up a diagonal run - a staircase of rails,
+	 * each one block along and one block across from the last - whose blocks pass
+	 * the 45 degree line on to each other instead of to a straight arm.  Only the
+	 * ends differ: where the beam bends into a straight rail it is mitred past
+	 * the block edge, where it carries straight on into the next diagonal (or
+	 * stops, at a loose end) it is cut square and flush, since two collinear
+	 * pieces that overlap z-fight.  CORNER_* bends at both ends, DIAGONAL_* at
+	 * neither, and DIAGONAL_*_BEND_&lt;side&gt; at that side only.
+	 *
 	 * A slope is two independent halves meeting at the beam centre of the block,
 	 * each one flat or tilted 45 degrees towards its own edge, named
 	 * SLOPE_&lt;left&gt;_&lt;right&gt;.  Every rail of a staircase run sits one
@@ -61,10 +71,22 @@ public class BlockTrafficRail extends Block {
 		STRAIGHT_LEFT("straight_left"),
 		STRAIGHT_RIGHT("straight_right"),
 		STRAIGHT_BOTH("straight_both"),
-		CORNER_LEFT_FRONT("corner_left_front"),
-		CORNER_LEFT_BACK("corner_left_back"),
-		CORNER_RIGHT_FRONT("corner_right_front"),
-		CORNER_RIGHT_BACK("corner_right_back"),
+		CORNER_LEFT_FRONT("corner_left_front", 0, true, true),
+		CORNER_LEFT_BACK("corner_left_back", 1, true, true),
+		CORNER_RIGHT_FRONT("corner_right_front", 2, true, true),
+		CORNER_RIGHT_BACK("corner_right_back", 3, true, true),
+		DIAGONAL_LEFT_FRONT("diagonal_left_front", 0, false, false),
+		DIAGONAL_LEFT_FRONT_BEND_LEFT("diagonal_left_front_bend_left", 0, true, false),
+		DIAGONAL_LEFT_FRONT_BEND_FRONT("diagonal_left_front_bend_front", 0, false, true),
+		DIAGONAL_LEFT_BACK("diagonal_left_back", 1, false, false),
+		DIAGONAL_LEFT_BACK_BEND_LEFT("diagonal_left_back_bend_left", 1, true, false),
+		DIAGONAL_LEFT_BACK_BEND_BACK("diagonal_left_back_bend_back", 1, false, true),
+		DIAGONAL_RIGHT_FRONT("diagonal_right_front", 2, false, false),
+		DIAGONAL_RIGHT_FRONT_BEND_RIGHT("diagonal_right_front_bend_right", 2, true, false),
+		DIAGONAL_RIGHT_FRONT_BEND_FRONT("diagonal_right_front_bend_front", 2, false, true),
+		DIAGONAL_RIGHT_BACK("diagonal_right_back", 3, false, false),
+		DIAGONAL_RIGHT_BACK_BEND_RIGHT("diagonal_right_back_bend_right", 3, true, false),
+		DIAGONAL_RIGHT_BACK_BEND_BACK("diagonal_right_back_bend_back", 3, false, true),
 		SLOPE_FLAT_UP("slope_flat_up", Level.FLAT, Level.UP),
 		SLOPE_FLAT_DOWN("slope_flat_down", Level.FLAT, Level.DOWN),
 		SLOPE_UP_FLAT("slope_up_flat", Level.UP, Level.FLAT),
@@ -77,15 +99,30 @@ public class BlockTrafficRail extends Block {
 		private final String name;
 		private final Level left;
 		private final Level right;
+		/** Index into CORNER_LINES / CORNER_BOUNDS, or -1. */
+		private final int corner;
+		private final boolean bendArm;
+		private final boolean bendTurn;
 
 		EnumShape(String name) {
 			this(name, null, null);
 		}
 
 		EnumShape(String name, Level left, Level right) {
+			this(name, left, right, -1, false, false);
+		}
+
+		EnumShape(String name, int corner, boolean bendArm, boolean bendTurn) {
+			this(name, null, null, corner, bendArm, bendTurn);
+		}
+
+		EnumShape(String name, Level left, Level right, int corner, boolean bendArm, boolean bendTurn) {
 			this.name = name;
 			this.left = left;
 			this.right = right;
+			this.corner = corner;
+			this.bendArm = bendArm;
+			this.bendTurn = bendTurn;
 		}
 
 		@Override
@@ -102,9 +139,13 @@ public class BlockTrafficRail extends Block {
 			return left != null;
 		}
 
-		/** The four corner values sit between the straight ones and the slopes. */
+		/** Any of the diagonal pieces, however its ends are cut. */
 		public boolean isCorner() {
-			return !isSlope() && ordinal() >= CORNER_LEFT_FRONT.ordinal();
+			return corner >= 0;
+		}
+
+		public int getCorner() {
+			return corner;
 		}
 
 		public Level getLeft() {
@@ -121,6 +162,9 @@ public class BlockTrafficRail extends Block {
 	/** SLOPES[left][right], indexed by {@link Level#ordinal()}; level/level is null. */
 	private static final EnumShape[][] SLOPES = new EnumShape[Level.values().length][Level.values().length];
 
+	/** DIAGONALS[corner][bendArm][bendTurn], the booleans as 0/1. */
+	private static final EnumShape[][][] DIAGONALS = new EnumShape[4][2][2];
+
 	static {
 		for (EnumShape shape : EnumShape.values())
 		{
@@ -128,6 +172,65 @@ public class BlockTrafficRail extends Block {
 			{
 				SLOPES[shape.getLeft().ordinal()][shape.getRight().ordinal()] = shape;
 			}
+
+			if (shape.isCorner())
+			{
+				DIAGONALS[shape.corner][shape.bendArm ? 1 : 0][shape.bendTurn ? 1 : 0] = shape;
+			}
+		}
+	}
+
+	/**
+	 * A diagonal through one block in absolute directions: the rail's facing,
+	 * the side its arm arrives from (along the rail axis, on the rail's own beam
+	 * line) and the side it turns out through (the rail's front or back).
+	 */
+	private static final class Diagonal {
+		final EnumFacing facing;
+		final EnumFacing arm;
+		final EnumFacing turn;
+
+		Diagonal(EnumFacing facing, EnumFacing arm, EnumFacing turn) {
+			this.facing = facing;
+			this.arm = arm;
+			this.turn = turn;
+		}
+
+		/** The diagonal leaving through two adjacent sides, whichever of them is the arm for this facing. */
+		static Diagonal through(EnumFacing facing, EnumFacing side, EnumFacing otherSide) {
+			return side.getAxis() == facing.getAxis()
+					? new Diagonal(facing, otherSide, side)
+					: new Diagonal(facing, side, otherSide);
+		}
+
+		/**
+		 * The facing whose beam line this diagonal reaches on the given side, or
+		 * null when it does not leave through it.  On the arm that is the rail's
+		 * own; on the turn it is the perpendicular run's, which the long diagonal
+		 * (out through the front) meets with that run facing towards the arm and
+		 * the short one (out through the back) with it facing away.
+		 */
+		EnumFacing beamOn(EnumFacing side) {
+			if (side == arm)
+			{
+				return facing;
+			}
+
+			if (side == turn)
+			{
+				return turn == facing ? arm : arm.getOpposite();
+			}
+
+			return null;
+		}
+
+		EnumFacing otherEnd(EnumFacing side) {
+			return side == arm ? turn : arm;
+		}
+
+		EnumShape toShape(boolean bendArm, boolean bendTurn) {
+			int corner = (arm == facing.rotateYCCW() ? 0 : 2) + (turn == facing ? 0 : 1);
+			return DIAGONALS[corner][bendArm ? 1 : 0][bendTurn ? 1 : 0];
 		}
 	}
 
@@ -259,50 +362,102 @@ public class BlockTrafficRail extends Block {
 	}
 
 	/**
-	 * The diagonal this rail should turn into, or null when it does not turn.
+	 * The facing of a rail at pos that a rail facing the given way can join with:
+	 * any rail but one turned back to back with it, like the two sides of a
+	 * central reservation, which never connect.
+	 */
+	private static EnumFacing getPartnerFacing(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+		EnumFacing other = getRailFacing(world, pos);
+		return other == facing.getOpposite() ? null : other;
+	}
+
+	/** The sides partner rails sit on. */
+	private static List<EnumFacing> getPartnerSides(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+		List<EnumFacing> sides = new ArrayList<EnumFacing>(4);
+
+		for (EnumFacing side : EnumFacing.Plane.HORIZONTAL)
+		{
+			if (getPartnerFacing(world, pos.offset(side), facing) != null)
+			{
+				sides.add(side);
+			}
+		}
+
+		return sides;
+	}
+
+	/**
+	 * The slope this rail takes, or null when it is level.  A block cannot be
+	 * both sloped and turning: a model element carries a single rotation and a
+	 * slope already spends it, so the slope wins.
+	 */
+	private static EnumShape getSlopeShape(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+		Level left = runLevel(world, pos, facing.rotateYCCW(), facing);
+		Level right = runLevel(world, pos, facing.rotateY(), facing);
+
+		return SLOPES[left.ordinal()][right.ordinal()];
+	}
+
+	/**
+	 * The diagonal a rail turns into at a joint, or null when it does not turn.
 	 *
-	 * A corner needs a straight arm on exactly one side along the rail axis (so a
-	 * run passing straight through is left alone) plus, on one of the two
+	 * The end of a straight run comes first, exactly as before diagonal runs
+	 * existed: a straight arm on exactly one side along the rail axis (so a run
+	 * passing straight through is left alone) plus, on one of the two
 	 * perpendicular sides, a rail whose own beam line is the one the diagonal has
 	 * to reach.
+	 *
+	 * Then a step of a diagonal run: a rail with partners on exactly two adjacent
+	 * sides, which settle its diagonal - the side on its run axis is the arm, the
+	 * other one the turn - and that turns when the rails at both ends can take
+	 * the beam up (see {@link #meets}).
+	 *
+	 * Placed facing either of the two directions one looks in from the road side
+	 * - north or east for a run whose road lies to the south-west - the steps of
+	 * a run alternate long and short diagonals that all land on one 45 degree
+	 * line.
 	 */
-	private static EnumShape getCornerShape(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+	private static Diagonal getCorner(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+		if (getSlopeShape(world, pos, facing) != null)
+		{
+			return null;
+		}
+
 		EnumFacing left = facing.rotateYCCW();
 		EnumFacing right = facing.rotateY();
 
 		boolean armLeft = getRailFacing(world, pos.offset(left)) == facing;
 		boolean armRight = getRailFacing(world, pos.offset(right)) == facing;
 
-		if (armLeft == armRight)
+		if (armLeft && armRight)
 		{
 			return null;
 		}
 
-		EnumFacing front = facing;
-		EnumFacing back = facing.getOpposite();
-
-		if (armLeft)
+		if (armLeft != armRight)
 		{
-			if (getRailFacing(world, pos.offset(back)) == right)
-			{
-				return EnumShape.CORNER_LEFT_BACK;
-			}
+			EnumFacing arm = armLeft ? left : right;
 
-			if (getRailFacing(world, pos.offset(front)) == left)
+			for (EnumFacing turn : new EnumFacing[] { facing.getOpposite(), facing })
 			{
-				return EnumShape.CORNER_LEFT_FRONT;
+				Diagonal diagonal = new Diagonal(facing, arm, turn);
+
+				if (getRailFacing(world, pos.offset(turn)) == diagonal.beamOn(turn))
+				{
+					return diagonal;
+				}
 			}
 		}
-		else
-		{
-			if (getRailFacing(world, pos.offset(back)) == left)
-			{
-				return EnumShape.CORNER_RIGHT_BACK;
-			}
 
-			if (getRailFacing(world, pos.offset(front)) == right)
+		List<EnumFacing> partners = getPartnerSides(world, pos, facing);
+
+		if (partners.size() == 2 && partners.get(0).getAxis() != partners.get(1).getAxis())
+		{
+			Diagonal diagonal = Diagonal.through(facing, partners.get(0), partners.get(1));
+
+			if (meets(world, pos, diagonal, diagonal.turn, true) && meets(world, pos, diagonal, diagonal.arm, true))
 			{
-				return EnumShape.CORNER_RIGHT_FRONT;
+				return diagonal;
 			}
 		}
 
@@ -310,29 +465,150 @@ public class BlockTrafficRail extends Block {
 	}
 
 	/**
-	 * The slope or corner this rail takes, or null when it is a plain straight
-	 * section.  Only neighbour FACINGS are read, never neighbour shapes, so this
-	 * never recurses - which is what lets {@link #connects} call it.
+	 * Whether the rail across one end of a diagonal can take its beam up.
 	 *
-	 * A block cannot be both sloped and turning: a model element carries a single
-	 * rotation and a slope already spends it, so the slope wins.
+	 * Coming in on that rail's run axis, its own beam line - straight, or the arm
+	 * of a diagonal of its own - has to be the one we reach.  Coming in through
+	 * its front or back, where only a diagonal leaves, it has to be able to carry
+	 * our line straight on: meet our beam, and have no other rail around it that
+	 * could make it turn some other way.  A rail placed facing the wrong way would
+	 * put its line 4 pixels off ours.
+	 *
+	 * The check reads the same from either side of the joint, so the steps of a
+	 * run each decide on their own and still meet.  That rail's own decision also
+	 * hangs on its far end, though, so with lookAhead that end is checked too: a
+	 * rail facing the wrong way then leaves the joints before it straight instead
+	 * of turning one of them into a diagonal that stops short.
 	 */
-	private static EnumShape getJointShape(IBlockAccess world, BlockPos pos, EnumFacing facing) {
-		Level left = runLevel(world, pos, facing.rotateYCCW(), facing);
-		Level right = runLevel(world, pos, facing.rotateY(), facing);
+	private static boolean meets(IBlockAccess world, BlockPos pos, Diagonal diagonal, EnumFacing side,
+			boolean lookAhead) {
+		BlockPos next = pos.offset(side);
+		EnumFacing nextFacing = getPartnerFacing(world, next, diagonal.facing);
+		EnumFacing beam = diagonal.beamOn(side);
 
-		if (left != Level.FLAT || right != Level.FLAT)
+		if (nextFacing == null)
 		{
-			return SLOPES[left.ordinal()][right.ordinal()];
+			return false;
 		}
 
-		return getCornerShape(world, pos, facing);
+		if (side.getAxis() != nextFacing.getAxis())
+		{
+			return nextFacing == beam;
+		}
+
+		EnumFacing onward = diagonal.otherEnd(side).getOpposite();
+		Diagonal step = Diagonal.through(nextFacing, side.getOpposite(), onward);
+
+		if (step.beamOn(side.getOpposite()) != beam
+				|| getPartnerFacing(world, next.offset(side), nextFacing) != null
+				|| getPartnerFacing(world, next.offset(onward.getOpposite()), nextFacing) != null)
+		{
+			return false;
+		}
+
+		return !lookAhead
+				|| getPartnerFacing(world, next.offset(onward), nextFacing) == null
+				|| meets(world, next, step, onward, false);
+	}
+
+	/**
+	 * The diagonal a rail with a single partner takes at the loose end of a
+	 * diagonal run, or null.  When that partner turns towards us, the 45 degree
+	 * line carries on to our far edge instead of stopping dead against a
+	 * straight stub - and must, when it comes in through our front or back,
+	 * where nothing else could take it up.
+	 *
+	 * Coming in on our run axis, though, a plain straight rail takes the beam up
+	 * just as well, and that is what a lone perpendicular rail at the corner of a
+	 * straight run has always done - so there the line only carries on when the
+	 * partner is itself in the middle of a run, between two diagonals.
+	 */
+	private static Diagonal getLooseEnd(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+		List<EnumFacing> partners = getPartnerSides(world, pos, facing);
+
+		if (partners.size() != 1 || getSlopeShape(world, pos, facing) != null)
+		{
+			return null;
+		}
+
+		EnumFacing side = partners.get(0);
+		BlockPos previous = pos.offset(side);
+		Diagonal before = getCorner(world, previous, getRailFacing(world, previous));
+		EnumFacing beam = before == null ? null : before.beamOn(side.getOpposite());
+
+		if (beam == null)
+		{
+			return null;
+		}
+
+		EnumFacing behind = before.otherEnd(side.getOpposite());
+		Diagonal end = Diagonal.through(facing, side, behind.getOpposite());
+
+		if (end.beamOn(side) != beam)
+		{
+			return null;
+		}
+
+		if (side.getAxis() != facing.getAxis()
+				&& !leavesDiagonally(world, previous.offset(behind), behind.getOpposite()))
+		{
+			return null;
+		}
+
+		return end;
+	}
+
+	/**
+	 * Whether the rail at pos is a diagonal leaving through the given side,
+	 * counting the loose end of a run coming in through its front or back - where
+	 * nothing but a diagonal can take the line on, so this never asks the
+	 * question again.
+	 */
+	private static boolean leavesDiagonally(IBlockAccess world, BlockPos pos, EnumFacing side) {
+		EnumFacing facing = getRailFacing(world, pos);
+
+		if (facing == null)
+		{
+			return false;
+		}
+
+		Diagonal corner = getCorner(world, pos, facing);
+
+		if (corner != null)
+		{
+			return corner.beamOn(side) != null;
+		}
+
+		List<EnumFacing> partners = getPartnerSides(world, pos, facing);
+
+		return side.getAxis() == facing.getAxis()
+				&& partners.size() == 1 && partners.get(0) == side
+				&& getLooseEnd(world, pos, facing) != null;
+	}
+
+	/** The diagonal this rail turns into, at a joint or at the loose end of a run, or null. */
+	private static Diagonal getDiagonal(IBlockAccess world, BlockPos pos, EnumFacing facing) {
+		Diagonal corner = getCorner(world, pos, facing);
+
+		return corner != null ? corner : getLooseEnd(world, pos, facing);
+	}
+
+	/**
+	 * Whether the beam bends where it leaves through the given side - into a
+	 * straight rail, rather than carrying straight on into the next diagonal or
+	 * stopping at a loose end - which decides how that end is cut.
+	 */
+	private static boolean bendsAt(IBlockAccess world, BlockPos pos, Diagonal diagonal, EnumFacing side) {
+		BlockPos next = pos.offset(side);
+		EnumFacing nextFacing = getPartnerFacing(world, next, diagonal.facing);
+
+		return nextFacing != null && getDiagonal(world, next, nextFacing) == null;
 	}
 
 	/**
 	 * Whether the neighbour on the given side ends a beam on our own beam line -
-	 * either another rail of the same facing, or a corner whose diagonal comes
-	 * out towards us.
+	 * either another rail of the same facing that does not turn away from us, or
+	 * a diagonal whose beam comes out towards us.
 	 */
 	private static boolean connects(IBlockAccess world, BlockPos pos, EnumFacing dir, EnumFacing facing) {
 		BlockPos neighbourPos = pos.offset(dir);
@@ -343,43 +619,32 @@ public class BlockTrafficRail extends Block {
 			return false;
 		}
 
-		if (neighbourFacing == facing)
+		Diagonal neighbour = getDiagonal(world, neighbourPos, neighbourFacing);
+
+		if (neighbour != null)
 		{
-			return true;
+			return neighbour.beamOn(dir.getOpposite()) == facing;
 		}
 
-		EnumShape neighbourShape = getJointShape(world, neighbourPos, neighbourFacing);
-
-		if (neighbourShape == null || !neighbourShape.isCorner())
-		{
-			return false;
-		}
-
-		EnumFacing towardsUs = dir.getOpposite();
-
-		switch (neighbourShape)
-		{
-			case CORNER_LEFT_BACK:
-				return neighbourFacing.getOpposite() == towardsUs && facing == neighbourFacing.rotateY();
-			case CORNER_LEFT_FRONT:
-				return neighbourFacing == towardsUs && facing == neighbourFacing.rotateYCCW();
-			case CORNER_RIGHT_BACK:
-				return neighbourFacing.getOpposite() == towardsUs && facing == neighbourFacing.rotateYCCW();
-			case CORNER_RIGHT_FRONT:
-				return neighbourFacing == towardsUs && facing == neighbourFacing.rotateY();
-			default:
-				return false;
-		}
+		return neighbourFacing == facing;
 	}
 
 	@Override
 	public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
 		EnumFacing facing = state.getValue(FACING);
 
-		EnumShape joint = getJointShape(worldIn, pos, facing);
-		if (joint != null)
+		EnumShape slope = getSlopeShape(worldIn, pos, facing);
+		if (slope != null)
 		{
-			return state.withProperty(SHAPE, joint);
+			return state.withProperty(SHAPE, slope);
+		}
+
+		Diagonal diagonal = getDiagonal(worldIn, pos, facing);
+		if (diagonal != null)
+		{
+			return state.withProperty(SHAPE, diagonal.toShape(
+					bendsAt(worldIn, pos, diagonal, diagonal.arm),
+					bendsAt(worldIn, pos, diagonal, diagonal.turn)));
 		}
 
 		boolean left = connects(worldIn, pos, facing.rotateYCCW(), facing);
@@ -467,7 +732,7 @@ public class BlockTrafficRail extends Block {
 
 		if (shape.isCorner())
 		{
-			return rotate(CORNER_BOUNDS[shape.ordinal() - EnumShape.CORNER_LEFT_FRONT.ordinal()], facing);
+			return rotate(CORNER_BOUNDS[shape.getCorner()], facing);
 		}
 
 		if (shape.isSlope())
@@ -513,7 +778,7 @@ public class BlockTrafficRail extends Block {
 
 	private void addCornerBoxes(EnumShape shape, EnumFacing facing, BlockPos pos, AxisAlignedBB entityBox,
 			List<AxisAlignedBB> collidingBoxes) {
-		double[] line = CORNER_LINES[shape.ordinal() - EnumShape.CORNER_LEFT_FRONT.ordinal()];
+		double[] line = CORNER_LINES[shape.getCorner()];
 		double normalX = line[4];
 		double normalZ = line[5];
 
