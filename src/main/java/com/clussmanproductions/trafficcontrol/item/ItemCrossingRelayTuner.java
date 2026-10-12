@@ -22,6 +22,7 @@ import com.clussmanproductions.trafficcontrol.tileentity.ShuntIslandTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.TrafficLightControlBoxTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.VerticalWigWagTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.WigWagTileEntity;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 import com.clussmanproductions.trafficcontrol.util.CustomAngleCalculator;
 
 import net.minecraft.block.state.IBlockState;
@@ -268,6 +269,13 @@ public class ItemCrossingRelayTuner extends Item {
 
 	private void checkUseOnTileEntity(World world, TileEntity te, TileEntity pairedTE, EntityPlayer player)
 	{
+		// Crossing gates and crossing lamps: only creative players may pair or unpair them
+		if (ConfigPermissions.isCreativeOnly(world.getBlockState(te.getPos()).getBlock()) && !ConfigPermissions.canConfigure(player))
+		{
+			player.sendMessage(new TextComponentString("Only players in creative mode can pair or unpair this block"));
+			return;
+		}
+
 		if (pairedTE instanceof RelayTileEntity)
 		{
 			RelayTileEntity relay = (RelayTileEntity)pairedTE;

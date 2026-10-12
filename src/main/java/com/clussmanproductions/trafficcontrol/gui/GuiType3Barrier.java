@@ -12,6 +12,7 @@ import com.clussmanproductions.trafficcontrol.signs.SignVerticalAlignment;
 import com.clussmanproductions.trafficcontrol.tileentity.SignTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.Type3BarrierTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.Type3BarrierTileEntity.SignType;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -509,6 +510,17 @@ public class GuiType3Barrier extends GuiScreen {
 		}
 	}
 	
+	@Override
+	public void updateScreen() {
+		super.updateScreen();
+
+		// Close the menu as soon as the player is no longer in creative mode
+		if (!ConfigPermissions.canConfigure(mc.player))
+		{
+			mc.displayGuiScreen(null);
+		}
+	}
+
 	@Override
 	public void onGuiClosed() {
 		tileEntity.syncConnectedBarriers(true);

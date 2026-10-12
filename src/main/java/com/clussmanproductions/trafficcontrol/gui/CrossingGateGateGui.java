@@ -6,6 +6,7 @@ import org.lwjgl.input.Keyboard;
 
 import com.clussmanproductions.trafficcontrol.tileentity.CrossingGateGateTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.CrossingGateGateTileEntity.GateLightCount;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -134,7 +135,24 @@ public class CrossingGateGateGui extends GuiScreen {
 	}
 	
 	@Override
+	public void updateScreen() {
+		super.updateScreen();
+
+		// Close the menu as soon as the player is no longer in creative mode
+		if (!ConfigPermissions.canConfigure(mc.player))
+		{
+			mc.displayGuiScreen(null);
+		}
+	}
+
+	@Override
 	public void onGuiClosed() {
+		// Not in creative mode anymore: discard the changes (the server would reject them anyway)
+		if (!ConfigPermissions.canConfigure(mc.player))
+		{
+			return;
+		}
+
 		te.setCrossingGateLength(parseFloatOrDefault(length.getText()));
 		te.setUpperRotationLimit(parseFloatOrDefault(upperRotation.getText()));
 		te.setLowerRotationLimit(parseFloatOrDefault(lowerRotation.getText()));

@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 import com.clussmanproductions.trafficcontrol.blocks.BlockCrossingGateLamps;
 import com.clussmanproductions.trafficcontrol.blocks.BlockOverheadLamps;
 import com.clussmanproductions.trafficcontrol.tileentity.CrossingLampsTileEntity;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.gui.GuiButton;
@@ -219,6 +220,17 @@ public class CrossingLampsGui extends GuiScreen {
 		}
 	}
 	
+	@Override
+	public void updateScreen() {
+		super.updateScreen();
+
+		// Close the menu as soon as the player is no longer in creative mode
+		if (!ConfigPermissions.canConfigure(mc.player))
+		{
+			mc.displayGuiScreen(null);
+		}
+	}
+
 	@Override
 	protected void actionPerformed(GuiButton button) throws IOException {
 		super.actionPerformed(button);

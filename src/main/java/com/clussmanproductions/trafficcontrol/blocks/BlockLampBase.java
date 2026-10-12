@@ -5,6 +5,7 @@ import com.clussmanproductions.trafficcontrol.ModTrafficControl;
 import com.clussmanproductions.trafficcontrol.gui.GuiProxy.GUI_IDs;
 import com.clussmanproductions.trafficcontrol.tileentity.CrossingLampsTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.render.CrossingLampsRenderer;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -194,7 +195,13 @@ public abstract class BlockLampBase extends Block {
 		{
 			return false;
 		}
-		
+
+		// Only creative players may open the configuration menu; the click is swallowed for everyone else
+		if (!ConfigPermissions.canConfigure(playerIn))
+		{
+			return true;
+		}
+
 		playerIn.openGui(ModTrafficControl.instance, GUI_IDs.CROSSING_GATE_LAMPS, worldIn, pos.getX(), pos.getY(), pos.getZ());
 		return true;
 	}

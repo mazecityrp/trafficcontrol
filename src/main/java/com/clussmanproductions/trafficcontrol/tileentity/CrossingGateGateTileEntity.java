@@ -6,12 +6,14 @@ import com.clussmanproductions.trafficcontrol.ModTrafficControl;
 import com.clussmanproductions.trafficcontrol.blocks.BlockCrossingGateGate;
 import com.clussmanproductions.trafficcontrol.blocks.BlockLampBase;
 import com.clussmanproductions.trafficcontrol.blocks.BlockLampBase.EnumState;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 import com.clussmanproductions.trafficcontrol.util.ILoopableSoundTileEntity;
 import com.clussmanproductions.trafficcontrol.util.LoopableTileEntitySound;
 import com.clussmanproductions.trafficcontrol.util.NBTUtils;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -448,13 +450,24 @@ public class CrossingGateGateTileEntity extends SyncableTileEntity implements IT
 	}
 
 	@Override
+	public boolean canPlayerUpdate(EntityPlayer player) {
+		return ConfigPermissions.canConfigure(player);
+	}
+
+	@Override
 	public void handleClientToServerUpdateTag(NBTTagCompound compound) {
 		setCrossingGateLength(compound.getFloat("length"));
 		setUpperRotationLimit(compound.getFloat("upperRotation"));
 		setLowerRotationLimit(compound.getFloat("lowerRotation"));
 		setDelay(compound.getFloat("delay"));
 		setLightStartOffset(compound.getFloat("lightStartOffset"));
-		setGateLightCount(GateLightCount.getByID(compound.getInteger("gateLightCount")));
+
+		// An unknown id would leave a null light count: every later NBT write of this tile entity would throw
+		GateLightCount count = GateLightCount.getByID(compound.getInteger("gateLightCount"));
+		if (count != null)
+		{
+			setGateLightCount(count);
+		}
 	}
 
 	@Override

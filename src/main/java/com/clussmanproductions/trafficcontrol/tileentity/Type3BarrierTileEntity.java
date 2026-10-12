@@ -6,9 +6,11 @@ import java.util.UUID;
 import com.clussmanproductions.trafficcontrol.ModTrafficControl;
 import com.clussmanproductions.trafficcontrol.blocks.BlockType3BarrierBase;
 import com.clussmanproductions.trafficcontrol.signs.Sign;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.network.NetworkManager;
@@ -340,7 +342,22 @@ public class Type3BarrierTileEntity extends SyncableTileEntity {
 	}
 
 	@Override
+	public boolean canPlayerUpdate(EntityPlayer player) {
+		return ConfigPermissions.canConfigure(player);
+	}
+
+	@Override
 	public void handleClientToServerUpdateTag(NBTTagCompound compound) {
+		// An unknown sign type would leave a null value: every later NBT write of this tile entity would throw
+		if (SignType.getByIndex(compound.getInteger("signType")) == null)
+		{
+			return;
+		}
+
+		// The tag comes from the client: keep this tile entity's real position (read back by readFromNBT)
+		compound.setInteger("x", pos.getX());
+		compound.setInteger("y", pos.getY());
+		compound.setInteger("z", pos.getZ());
 		handleUpdateTag(compound);
 	}
 	

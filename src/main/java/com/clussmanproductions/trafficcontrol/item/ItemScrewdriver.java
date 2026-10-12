@@ -9,6 +9,7 @@ import com.clussmanproductions.trafficcontrol.ModTrafficControl;
 import com.clussmanproductions.trafficcontrol.network.PacketHandler;
 import com.clussmanproductions.trafficcontrol.network.ServerSideSoundPacket;
 import com.clussmanproductions.trafficcontrol.tileentity.IHasRotationProperty;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
@@ -57,6 +58,13 @@ public class ItemScrewdriver extends Item
     	{    		
             IBlockState state = world.getBlockState(pos);
             Block block = state.getBlock();
+
+            // Rotating a crossing gate, crossing lamps or a type 3 barrier is a configuration change: creative players only
+            if (ConfigPermissions.isCreativeOnly(block) && !ConfigPermissions.canConfigure(player))
+            {
+            	return EnumActionResult.FAIL;
+            }
+
             if (block.getRegistryName().getResourceDomain().equalsIgnoreCase(ModTrafficControl.MODID))
             {
 	            if (block.hasTileEntity(state) && world.getTileEntity(pos) instanceof IHasRotationProperty)

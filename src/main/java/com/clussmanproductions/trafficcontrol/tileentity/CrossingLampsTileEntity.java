@@ -2,8 +2,10 @@ package com.clussmanproductions.trafficcontrol.tileentity;
 
 import com.clussmanproductions.trafficcontrol.blocks.BlockLampBase;
 import com.clussmanproductions.trafficcontrol.blocks.BlockLampBase.EnumState;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -114,6 +116,11 @@ public class CrossingLampsTileEntity extends SyncableTileEntity {
 		tag.setInteger("swRot", swBulbRotation);
 		tag.setInteger("seRot", seBulbRotation);
 		return tag;
+	}
+
+	@Override
+	public boolean canPlayerUpdate(EntityPlayer player) {
+		return ConfigPermissions.canConfigure(player);
 	}
 
 	@Override

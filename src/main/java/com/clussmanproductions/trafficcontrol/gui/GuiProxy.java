@@ -8,6 +8,7 @@ import com.clussmanproductions.trafficcontrol.tileentity.SignTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.StreetSignTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.TrafficLightControlBoxTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.Type3BarrierTileEntity;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
@@ -71,6 +72,13 @@ public class GuiProxy implements IGuiHandler {
 
 	@Override
 	public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+
+		// Crossing gate, crossing lamps and type 3 barrier menus: creative players only
+		if ((ID == GUI_IDs.CROSSING_GATE_GATE || ID == GUI_IDs.CROSSING_GATE_LAMPS || ID == GUI_IDs.TYPE_3_BARRIER)
+				&& !ConfigPermissions.canConfigure(player))
+		{
+			return null;
+		}
 
 		switch(ID)
 		{

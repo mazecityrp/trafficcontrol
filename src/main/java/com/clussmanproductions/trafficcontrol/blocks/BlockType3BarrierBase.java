@@ -5,6 +5,7 @@ import com.clussmanproductions.trafficcontrol.ModTrafficControl;
 import com.clussmanproductions.trafficcontrol.gui.GuiProxy;
 import com.clussmanproductions.trafficcontrol.tileentity.Type3BarrierTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.render.RendererType3Barrier;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -150,7 +151,13 @@ public abstract class BlockType3BarrierBase extends Block {
 		{
 			return super.onBlockActivated(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ);
 		}
-		
+
+		// Only creative players may open the configuration menu; the click is swallowed for everyone else
+		if (!ConfigPermissions.canConfigure(playerIn))
+		{
+			return true;
+		}
+
 		Type3BarrierTileEntity barrierTE = (Type3BarrierTileEntity)teInPos;
 		
 		playerIn.openGui(ModTrafficControl.instance, GuiProxy.GUI_IDs.TYPE_3_BARRIER, worldIn, barrierTE.getPos().getX(), barrierTE.getPos().getY(), barrierTE.getPos().getZ());

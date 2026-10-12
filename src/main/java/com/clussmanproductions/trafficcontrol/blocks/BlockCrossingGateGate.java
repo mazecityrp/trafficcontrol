@@ -6,6 +6,7 @@ import com.clussmanproductions.trafficcontrol.gui.GuiProxy;
 import com.clussmanproductions.trafficcontrol.item.ItemCrossingRelayTuner;
 import com.clussmanproductions.trafficcontrol.tileentity.CrossingGateGateTileEntity;
 import com.clussmanproductions.trafficcontrol.tileentity.render.RendererCrossingGateGate;
+import com.clussmanproductions.trafficcontrol.util.ConfigPermissions;
 import com.clussmanproductions.trafficcontrol.util.CustomAngleCalculator;
 
 import net.minecraft.block.Block;
@@ -114,7 +115,13 @@ public class BlockCrossingGateGate extends Block {
 		{
 			return super.onBlockActivated(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ);
 		}
-		
+
+		// Only creative players may open the configuration menu; the click is swallowed for everyone else
+		if (!ConfigPermissions.canConfigure(playerIn))
+		{
+			return true;
+		}
+
 		playerIn.openGui(ModTrafficControl.instance, GuiProxy.GUI_IDs.CROSSING_GATE_GATE, worldIn, pos.getX(), pos.getY(), pos.getZ());
 		return true;
 	}
