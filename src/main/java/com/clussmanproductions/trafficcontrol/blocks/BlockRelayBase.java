@@ -174,19 +174,19 @@ public abstract class BlockRelayBase extends Block implements ITileEntityProvide
 			return;
 		}
 		
+		// No early return on air: a source that disappears (torch or redstone block removed) leaves air at fromPos
 		if (worldIn.getBlockState(pos.offset(EnumFacing.DOWN)).getBlock() instanceof BlockRelayBase ||
-				worldIn.getBlockState(fromPos).getBlock() instanceof BlockRelayBase ||
-				worldIn.isAirBlock(fromPos))
+				worldIn.getBlockState(fromPos).getBlock() instanceof BlockRelayBase)
 		{
 			return;
 		}
-		
-		RelayTileEntity te = (RelayTileEntity)worldIn.getTileEntity(pos);
-		te = te.getMaster(worldIn);
-		
-		if (te != null)
+
+		TileEntity te = worldIn.getTileEntity(pos);
+		RelayTileEntity master = te instanceof RelayTileEntity ? ((RelayTileEntity)te).getMaster(worldIn) : null;
+
+		if (master != null)
 		{
-			te.setPowered(worldIn.isBlockPowered(pos));
+			master.updatePoweredFromWorld();
 		}
 	}
 

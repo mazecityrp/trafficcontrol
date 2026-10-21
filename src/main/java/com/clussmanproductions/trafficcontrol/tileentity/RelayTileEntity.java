@@ -218,8 +218,11 @@ public class RelayTileEntity extends TileEntity implements ITickable, IScannerSu
 			alreadyNotifiedBells = false;
 			alreadyNotifiedGates = false;
 			alreadyNotifiedWigWags = false;
-			
+
 			lastHeartbeat = 0;
+
+			// Catches the signal changes that came without a block update (blocks set without physics, WorldEdit...)
+			updatePoweredFromWorld();
 		}
 		else
 		{
@@ -688,6 +691,48 @@ public class RelayTileEntity extends TileEntity implements ITickable, IScannerSu
 		updateComparator();
 	}
 	
+	/**
+	 * Master only: reads the redstone signal from the world. The box is powered while any block of its
+	 * bottom layer receives a signal, whichever block was last updated. Never loads a chunk to read it.
+	 */
+	public void updatePoweredFromWorld()
+	{
+		if (world == null || world.isRemote || !isMaster || isInvalid() ||
+				!(world.getBlockState(pos).getBlock() instanceof BlockRelayBase) ||
+				!world.isAreaLoaded(pos, 2))
+		{
+			return;
+		}
+
+		boolean powered = false;
+		// The bottom layer is 2x2 and holds the master: it fits in the 3x3 square centred on the master
+		for (BlockPos part : BlockPos.getAllInBox(pos.add(-1, 0, -1), pos.add(1, 0, 1)))
+		{
+			if (isOwnPart(part) && world.isBlockPowered(part))
+			{
+				powered = true;
+				break;
+			}
+		}
+
+		if (powered != isPowered)
+		{
+			setPowered(powered);
+		}
+	}
+
+	/** A neighbouring relay box has another master */
+	private boolean isOwnPart(BlockPos part)
+	{
+		if (!(world.getBlockState(part).getBlock() instanceof BlockRelayBase))
+		{
+			return false;
+		}
+
+		TileEntity te = world.getTileEntity(part);
+		return te instanceof RelayTileEntity && ((RelayTileEntity)te).getMaster(world) == this;
+	}
+
 	private void setAutomatedPowered(boolean automatedPowerOverride)
 	{
 		this.automatedPowerOverride = automatedPowerOverride;

@@ -12,3 +12,13 @@ Gradle cache once the workspace is set up:
       tools/test/RailTest.java \
       src/main/java/com/clussmanproductions/trafficcontrol/blocks/BlockTrafficRail.java
   java -cp "out;<pinned libs>;<forgeBin.jar>;<libs>" RailTest
+
+RelayTest pairs a crossing relay box with a crossing gate in an in-memory server World
+and gives / removes the signal the way players and MazeCity plugins do (lever, redstone
+block, torch, block erased without a block update); the gate must follow.  It runs
+against the compiled mod (build/classes/java/main after gradlew build), with the real
+ModTrafficControl, not the stub, and the whole compile classpath except the DynamX
+"-all" jar and OpenComputers:
+
+  javac -d out -cp "build/classes/java/main;<forgeBin.jar>;<libs>" tools/test/RelayTest.java
+  java -cp "out;<pinned libs>;build/classes/java/main;<forgeBin.jar>;<libs>" RelayTest
